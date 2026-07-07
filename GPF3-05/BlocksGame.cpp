@@ -41,7 +41,7 @@ void BlocksGame::initUser()
 		float angle = dist(gen);
 		float speedX = speed * cos(angle);
 		float speedY = speed * sin(angle);
-		enemys.emplace_back(Sprite("wingMan1.bmp"));
+		enemys.emplace_back(Sprite());
 		enemys.back().setCenter(rand() % width, rand() % height);
 		enemys.back().setSpeed(speedX, speedY);
 		enemys.back().setColor(255, 0, 0);
@@ -128,6 +128,7 @@ void BlocksGame::drawUser(unsigned char* buff, int mode, int keyLevel, int keyTr
 		text.setText("GAME OVER");
 		if (getKeyTrigger(SDLK_RETURN)) {
 			gameState = Playing;
+			text.setText(" ");
 			initGame();
 		}
 	}
@@ -135,6 +136,7 @@ void BlocksGame::drawUser(unsigned char* buff, int mode, int keyLevel, int keyTr
 		text.setText("CLEAR!");
 		if (getKeyTrigger(SDLK_RETURN)) {
 			gameState = Playing;
+			text.setText(" ");
 			initGame();
 		}
 	}
@@ -181,6 +183,9 @@ void BlocksGame::drawUser(unsigned char* buff, int mode, int keyLevel, int keyTr
 		lightning->draw(buff, width, height);
 	}
 	for (Sprite& enemy : enemys) {
+		if (!enemy.isActive) {
+			continue; // 非アクティブな敵はスキップ
+		}
 		if (enemy.centerY - enemy.sizeH / 2 < 0) { // ボールが上端に到達
 			enemy.speedY *= -1; // Y方向の速度を反転
 		}
@@ -204,12 +209,13 @@ void BlocksGame::drawUser(unsigned char* buff, int mode, int keyLevel, int keyTr
 				lightning->isActive = false; // ライトニングを非表示にする
 				playSound(hitBlockSound);
 				enemyRemaining--; // 敵の残り数を減らす
-				break;
+				scoreText.setText(std::format("L: {}", enemyRemaining).c_str());
 
-				//if (enemyRemaining <= 0) {
-				//	gameState = Cleared; // すべての敵を倒したらゲームクリア
-				//	playSound(clearSound);
-				//}
+				if (enemyRemaining <= 0) {
+					gameState = Cleared; // すべての敵を倒したらゲームクリア
+					playSound(clearSound);
+					break;
+				}
 			}
 		}
 		enemy.draw(buff, width, height);
@@ -231,4 +237,5 @@ void BlocksGame::drawUser(unsigned char* buff, int mode, int keyLevel, int keyTr
 		obj->move(); // オブジェクトを移動させる
 		obj->draw(buff, width, height);
 	}
+
 }
