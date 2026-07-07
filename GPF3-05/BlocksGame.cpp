@@ -21,9 +21,8 @@ BlocksGame::BlocksGame()
 
 void BlocksGame::initUser()
 {
-	int blockColorScore[RectRowNum] = { 5, 10, 15, 20 }; // ブロックの行ごとのスコア（黄、緑、オレンジ、赤）
 	int startX = width / 2;
-	int startY = height - RectHeight / 2 - 10;
+	int startY = height / 2;
 
 	// バーの初期設定
 	player.setColor(255, 255, 255);
