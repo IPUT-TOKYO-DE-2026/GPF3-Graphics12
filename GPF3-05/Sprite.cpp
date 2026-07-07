@@ -1,6 +1,8 @@
 ﻿#include <algorithm>
 #include "Sprite.h"
 
+std::unordered_map<std::string, std::shared_ptr<SDL_Surface>> Sprite::imageCache; // 画像キャッシュ
+
 Sprite::Sprite(const char* fileName)
 {
 	loadImage(fileName);
@@ -8,17 +10,21 @@ Sprite::Sprite(const char* fileName)
 
 Sprite::~Sprite()
 {
-	if (image) {
-		SDL_FreeSurface(image);
-	}
+
 }
 
 bool Sprite::loadImage(const char* filename)
 {
-	//画像読み込み部
-	image = SDL_LoadBMP(filename);
-	if (image == NULL) {	//画像が読み込めなかった時
-		return false;			//プログラムにエラーだから終了すると伝える
+	if (imageCache.find(filename) != imageCache.end()) { // キャッシュに画像が存在する場合
+		image = imageCache[filename]; // ファイル名をキーにしてキャッシュから画像を取得
+	} else {
+		// 画像を読み込み、SDL_Surfaceを管理する共有ポインタを作成
+		// SDL_FreeSurfaceをデリータとして指定して、delete時にSDL_Surfaceのメモリを自動的に解放する
+		image = std::shared_ptr<SDL_Surface>(SDL_LoadBMP(filename), SDL_FreeSurface); 
+		if (image == nullptr) {
+			return false;
+		}
+		imageCache[filename] = image; // ファイル名をキーにしてキャッシュに保存
 	}
 
 	//画像加工部
@@ -30,12 +36,36 @@ bool Sprite::loadImage(const char* filename)
 	return true;
 }
 
+// アニメーション用の画像フレームを追加する
+bool Sprite::addImageFrame(const char* filename)
+{
+	if (imageCache.find(filename) != imageCache.end()) {
+		frames.push_back(imageCache[filename]);
+	} else {
+		std::shared_ptr<SDL_Surface> frame(SDL_LoadBMP(filename), SDL_FreeSurface);
+		if (frame == nullptr) {
+			return false;
+		}
+		imageCache[filename] = frame;
+		frames.push_back(frame);
+	}
+	return true;
+}
+
 //  buff フレームバッファの先頭アドレス
 //  width, height フレームバッファの高さと横幅
 void Sprite::draw(unsigned char* buff, int width, int height)
 {
+	if (frames.size() > 0) { // アニメーションフレームがある場合
+		// フレームアニメーションの処理
+		float d = animDuration / frames.size(); // 1フレームあたりの表示時間
+		int currentFrame = static_cast<int>(currentTime / d) % frames.size(); // 現在のフレーム番号を計算
+		image = frames[currentFrame]; // 現在のフレームの画像を設定
+		bytesPerPixel = image->format->BytesPerPixel;
+		setSize(image->w, image->h);
+	}
 	if (isActive) {
-		if (fabsf(angle) > 0.0001f) {
+		if (fabsf(angle) > 0.0001f) { // fabsf 絶対値
 			draw(angle, buff, width, height);
 		} else if (bytesPerPixel == 3) {
 			int clipSX = std::clamp(sx, 0, width);
@@ -86,7 +116,7 @@ void Sprite::drawWithAlpha(unsigned char* buff, int width, int height)
 void Sprite::draw(float radian, unsigned char* buff, int width, int height)
 {
 	// 回転ありの場合は、回転後の矩形を計算して描画する
-// 回転後の矩形の左上と右下の座標を計算する
+	// 回転後の矩形の左上と右下の座標を計算する
 	float cosA = cos(angle);
 	float sinA = sin(angle);
 	float diag = sqrt(static_cast<float>(sizeW * sizeW + sizeH * sizeH)) / 2.0f;
