@@ -41,7 +41,7 @@ void BlocksGame::initUser()
 		float angle = dist(gen);
 		float speedX = speed * cos(angle);
 		float speedY = speed * sin(angle);
-		enemys.emplace_back(Sprite());
+		enemys.emplace_back(Sprite("wingMan1.bmp"));
 		enemys.back().setCenter(rand() % width, rand() % height);
 		enemys.back().setSpeed(speedX, speedY);
 		enemys.back().setColor(255, 0, 0);
@@ -162,8 +162,8 @@ void BlocksGame::drawUser(unsigned char* buff, int mode, int keyLevel, int keyTr
 
 	if (getKeyTrigger(SDLK_SPACE)) {
 		std::shared_ptr<Sprite> lightning = std::make_shared<Sprite>("lighting_yellow_s.bmp");
-		float vecX = cos(rot - M_PI / 2);
-		float vecY = sin(rot - M_PI / 2);
+		float vecX = cos(rot -M_PI / 2); // プレイヤーの回転から90度ずらす
+		float vecY = sin(rot -M_PI / 2); // プレイヤーの回転から90度ずらす
 		lightning->setCenter(player.centerX + vecX * player.sizeW * 0.6f, player.centerY + vecY * player.sizeH * 0.6f);
 		float speed = 1.0f; // ライトニングの速度
 		float speedX = speed * vecX;
